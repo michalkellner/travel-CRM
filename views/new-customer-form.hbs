@@ -39,16 +39,53 @@
 	<body>
 		
 		<div class="new-customer-container">
-			<div class="new-customer-title">Add a new customer:</div>
+			<div class="new-customer-title">Add a new customer and booking:</div>
+
+			<form class="new-customer-form" id="new-customer-form" action="/new-reservation" method="POST">
+				<!-- Customer Info -->
+				<div class="new-customer-label">Name</div>
+				<input type="text" id="name" name="name" required>
+
+				<div class="new-customer-label">Email</div>
+				<input type="email" id="email" name="email" required>
+
+				<div class="new-customer-label">Phone Number</div>
+				<input type="text" id="phone" name="phone" required>
+
+				<!-- Booking Info -->
+				<hr>
+
+				<div class="new-customer-label">Select Retreat</div>
+				<select name="retreat_id" id="retreat_id" required>
+					{{#each retreats}}
+						<option value="{{this.retreat_id}}">
+							{{this.retreat_name}}
+						</option>
+					{{/each}}
+				</select>
+
+				<div class="new-customer-label">Retreat Start Date</div>
+				<input type="date" id="start_date" name="start_date" readonly required>
+
+				<div class="new-customer-label">Number of Guests</div>
+				<input type="number" id="guests" name="guests" min="1" required>
+
+				<div class="new-customer-label">Meal Preferences</div>
+				<select id="meal_choices" name="meal_choices[]" multiple required></select>
+
+				<input type="submit" value="Submit">
+			</form>
+			{{!-- <div class="new-customer-title">Add a new customer:</div>
 			<form class="new-customer-form" id="new-customer-form" action="/customers" method="POST">
 				<div class="new-customer-label">Name</div>
 				<input type="text" id="name" name="name">
+
 				<div class="new-customer-label">Email</div>
 				<input type="text" id="email" name="email">
 				<div class="new-customer-label">Phone Number</div>
 				<input type="text" id="phone" name="phone">
 				<input type="submit" value="Submit">
-			</form>
+			</form> --}}
 			<div id="new-customer-confirmation"> Customer added to database.</div>
 		</div>
 		{{> footer}}

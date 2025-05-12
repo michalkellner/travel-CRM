@@ -1,8 +1,15 @@
 require('dotenv').config();
 var expressPackage = require("express");
 var mysql = require("mysql2");
-var app = expressPackage();
+
 var exphbs = require("express-handlebars");
+const Handlebars = require("handlebars");
+var app = expressPackage();
+
+// Register the "json" helper
+Handlebars.registerHelper('json', function (context) {
+	return JSON.stringify(context, null, 2); // Pretty print with 2-space indentation
+  });
 
 var path = require("path");
 
@@ -31,9 +38,24 @@ const db = mysql.createConnection({
 // 	console.log('Connected to MySQL database');
 // });
 
+// when creating new reservation, get necessary info
+app.get('/new-reservation', async (req, res) => {
+	const [retreats] = await db.query('SELECT * FROM retreats');
+
+	// Convert meal options from JSON string to array
+	const formattedRetreats = retreats.map(r => ({
+		...r,
+		meal_options: typeof r.meal_options === 'string' ? JSON.parse(r.meal_options) : r.meal_options,
+	}));
+
+	res.render('new-customer-form', {
+		retreats: formattedRetreats
+	});
+});
+
 // Create a new customer & reservation:
 app.post('/new-reservation', async (req, res) => {
-	const {name, email, phone, num_guests} = req.body;
+	const {name, email, phone, retreat_id, start_date, guests, meal_choices} = req.body;
 	const cust_query = "INSERT INTO customers (customer_name, email, phone_number) VALUES (?, ?, ?)";
 	const res_query = "INSERT INTO bookings_general (customer_id, retreat_id, num_guests, total_price, status, retreat_date, meal_choices) VALUES (?, ?, ?, ?, ?, ?, ?)";
 	try {
@@ -83,9 +105,14 @@ app.get('/customers', async (req, res) => {
 	}
 });
 
+Handlebars.registerHelper('json', function (context) {
+	return JSON.stringify(context, null, 2);
+});
+
 var hbs = exphbs.create({
 	extname: ".hbs",
 	defaultLayout: false,
+	handlebars: Handlebars
 	// helpers: require("./helpers") // use helpers to find partials
 });
 
