@@ -31,12 +31,16 @@ const db = mysql.createConnection({
 // 	console.log('Connected to MySQL database');
 // });
 
-// Create a new customer:
-app.post('/customers', async (req, res) => {
-	const {name, email, phone} = req.body;
-	const query = "INSERT INTO customers (customer_name, email, phone_number) VALUES (?, ?, ?)";
+// Create a new customer & reservation:
+app.post('/new-reservation', async (req, res) => {
+	const {name, email, phone, num_guests} = req.body;
+	const cust_query = "INSERT INTO customers (customer_name, email, phone_number) VALUES (?, ?, ?)";
+	const res_query = "INSERT INTO bookings_general (customer_id, retreat_id, num_guests, total_price, status, retreat_date, meal_choices) VALUES (?, ?, ?, ?, ?, ?, ?)";
 	try {
-		const [results] = await db.query(query, [name, email, phone]);
+		const [customer] = await db.query(query, [name, email, phone]);
+
+		const customerID = customer.customer_id;
+		await db.query(res_query, [customerID, num_guests]);
 		res.status(201).redirect('/show-customers');
 	} catch (err) {
 		console.error('Error creating customer:', err);

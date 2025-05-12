@@ -1,7 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
-	<body>
+	<head>
 		{{> main}}
+		<title>New Customer and Booking</title>
+		<script>
+			document.addEventListener('DOMContentLoaded', () => {
+				const retreats = {{{json retreats}}}; // Pass the JSON encoded retreat array
+
+				const retreatSelect = document.getElementById('retreat_id');
+				const startDateField = document.getElementById('start_date');
+				const mealSelect = document.getElementById('meal_choices');
+
+				function updateRetreatDetails() {
+					const selectedId = retreatSelect.value;
+					const retreat = retreats.find(r => r.reteat_id == selectedId);
+
+					if (retreat) {
+						// Update start date
+						startDateField.value = retreat.start_date;
+
+						// Update meal options
+						mealSelect.innerHTML = '';
+						retreat.meal_options.forEach(option => {
+							const opt = document.createElement('option');
+							opt.value = option;
+							opt.textContent = option;
+							mealSelect.appendChild(opt);
+						});
+					}
+
+				}
+
+				retreatSelect.addEventListener('change', updateRetreatDetails);
+				updateRetreatDetails(); // Trigger on load
+			});
+		</script>
+	</head>
+	<body>
+		
 		<div class="new-customer-container">
 			<div class="new-customer-title">Add a new customer:</div>
 			<form class="new-customer-form" id="new-customer-form" action="/customers" method="POST">
@@ -14,18 +50,7 @@
 				<input type="submit" value="Submit">
 			</form>
 			<div id="new-customer-confirmation"> Customer added to database.</div>
-			<div id="submitted">{{submitted}}</div>
 		</div>
 		{{> footer}}
 	</body>
 </html>
-<script>
-	console.log(document.getElementById("submitted").innerHTML);
-	var submitted = document.getElementById("submitted").innerHTML;
-	if(submitted == "yes"){
-		var newCustomerForm = document.getElementById("new-customer-form");
-		var newCustomerConfirmation = document.getElementById("new-customer-confirmation");
-		newCustomerForm.style.display = "none";
-		newCustomerConfirmation.style.display = "block";
-	}
-</script>
