@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Table</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    {{>main}}
+    <div class="container">
+        <input type="text" id="nameInput" placeholder="Name">
+        <input type="text" id="emailInput" placeholder="Email">
+        <input type="text" id="phoneInput" placeholder = "Phone">
+        <button onClick="applyFilters()">Apply Filters</button>
+        <h2>Customer Information</h2>
+        <!-- Table of customers data: -->
+        <table id="itemTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Table rows will be populated here by JavaScript-->
+            </tbody>
+        </table>
+    </div>
+    <script>
+        function populateTable(){
+            const tableBody = document.querySelector('#itemTable tbody');
+        
+        // fetch customer data from customers table of database
+        fetch('http://localhost:8080/customers')
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+
+                    row.innerHTML = `
+                        <td>${item.customer_id}</td>
+                        <td>${item.customer_name}</td>
+                        <td>${item.email}</td>
+                        <td>${item.phone_number}</td>
+                        <td>${new Date(item.created_at).toLocaleString()}</td>
+                    `;
+
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error =>{
+                console.error('Error fetching data:', error);
+            });
+        }
+        window.onload = populateTable;
+    </script>
+    {{>footer}}
+
+    <script>
+    function fetchFilteredCustomers({ name = '', email = '', phone = ''}) {
+        const params = new URLSearchParams();
+
+        if (name) params.append('name', name);
+        if (email) params.append('email', email);
+        if (phone) params.append('phone', phone);
+
+        fetch (`http://localhost:8080/customers?${params.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                //clear and repopulate table
+                console.log('Filtered data:', data); // Debug line
+                const tableBody = document.querySelector('#itemTable tbody');
+                tableBody.innerHTML = '';
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+
+                    row.innerHTML = `
+                        <td>${item.customer_id}</td>
+                        <td>${item.customer_name}</td>
+                        <td>${item.email}</td>
+                        <td>${item.phone_number}</td>
+                        <td>${new Date(item.created_at).toLocaleString()}</td>
+                    `;
+
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching filtered customers:', error);
+            });
+    }
+
+    function applyFilters() {
+        console.log('Apply Filters clicked'); // Debug line
+        const name = document.getElementById('nameInput').value;
+        const email = document.getElementById('emailInput').value;
+        const phone = document.getElementById('phoneInput').value;
+
+        fetchFilteredCustomers({name, email, phone});
+    }
+</script>
+</body>
+</html>

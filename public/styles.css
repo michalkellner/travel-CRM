@@ -1,0 +1,102 @@
+﻿@font-face{
+	font-family: fontLight;
+	src: url('fonts/font1.ttf');
+}
+
+@font-face{
+	font-family: fontRegular;
+	src: url('fonts/CreatoDisplay-RegularItalic.otf')
+}
+
+@font-face{
+	font-family: fontBoldItalic;
+	src: url('fonts/CreatoDisplay-BoldItalic.otf')
+}
+
+table {
+	width: 80%;
+	margin: 20px auto;
+	border-collapse: collapse;
+	border: 1px solid #ddd;
+}
+
+th, td {
+	padding: 12px;
+	text-align: left;
+	border: 1px solid #ddd;
+}
+
+th {
+	background-color: palegoldenrod;
+}
+
+tr:hover {
+	background-color: #f1f1f1;
+}
+
+.container {
+	text-align: center;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f7f9fc;
+    margin: 0;
+    padding: 0;
+}
+
+.new-customer-container {
+    max-width: 400px;
+    margin: 50px auto;
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.new-customer-title {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: bold;
+    color: #333;
+}
+
+.new-customer-label {
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+.new-customer-form input[type="text"],
+.new-customer-form input[type="email"],
+.new-customer-form input[type="submit"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.new-customer-form input[type="submit"] {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.new-customer-form input[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+#new-customer-confirmation {
+    margin-top: 20px;
+    text-align: center;
+    color: green;
+    font-weight: bold;
+    display: none;
+}
+
