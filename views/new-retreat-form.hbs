@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		{{> main}}
+		<title>New Retreat</title>
+	</head>
+	<body>
+		
+		<div class="new-retreat-container">
+			<div class="new-retreat-title">Add a new retreat:</div>
+
+			<form class="new-retreat-form" id="new-retreat-form" action="/new-retreat" method="POST">
+				<!-- Customer Info -->
+				<div class="new-retreat-label">Name</div>
+				<input type="text" id="retreat_name" name="retreat_name" required>
+
+				<div class="new-retreat-label">start_date</div>
+				<input type="date" id="start_date" name="start_date" required>
+
+				<div class="new-retreat-label">Length</div>
+				<input type="number" id="length" name="length" required>
+				
+				<!-- use a text box to enter meal options -->
+				<div class="new-retreat-label">Meal_options<div>
+				<input type="text" id="meal_options_input" name="meal_options_input" placeholder="Enter meal options separated by commas" required>
+				<input type="hidden" id="meal_options_json" name="meal_options_json">
+
+				<div class="new-retreat-label">Room Types</div>	
+				<div id="room-types-container">
+					<!-- Dynamic room type fields will be added here -->
+				</div>
+				<button type="button" id="add-room-type">Add Room Type</button>
+
+				<input type="submit" value="Submit">
+			</form>
+			<div id="new-retreat-confirmation"> Retreat added to database.</div>
+		</div>
+		{{> footer}}
+	</body>
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const form = document.getElementById('new-retreat-form');
+			const mealOptionsInput = document.getElementById('meal_options_input');
+			const mealOptionsJson = document.getElementById('meal_options_json');
+	
+			form.addEventListener('submit', (event) => {
+				// Convert the text input into a JSON array
+				const mealOptionsArray = mealOptionsInput.value.split(',').map(option => option.trim());
+				mealOptionsJson.value = JSON.stringify(mealOptionsArray);
+	
+				console.log("Meal Options JSON:", mealOptionsJson.value); // For debugging
+			});
+		});
+	</script>
+	<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const roomTypesContainer = document.getElementById('room-types-container');
+        const addRoomTypeButton = document.getElementById('add-room-type');
+
+        // Function to create a new room type input group
+        function createRoomTypeFields(index) {
+            const roomTypeDiv = document.createElement('div');
+            roomTypeDiv.classList.add('room-type');
+
+            roomTypeDiv.innerHTML = `
+                <div>
+                    <label>Room Name:</label>
+                    <input type="text" name="room_types[${index}][room_name]" required>
+                </div>
+                <div>
+                    <label>Room Price:</label>
+                    <input type="number" name="room_types[${index}][price]" min="0" step="0.01" required>
+                </div>
+                <div>
+                    <label>Capacity:</label>
+                    <input type="number" name="room_types[${index}][capacity]" min="1" required>
+                </div>
+                <div>
+                    <label>Inventory:</label>
+                    <input type="number" name="room_types[${index}][inventory]" min="0" required>
+                </div>
+                <button type="button" class="remove-room-type">Remove</button>
+            `;
+
+            // Add event listener to remove button
+            roomTypeDiv.querySelector('.remove-room-type').addEventListener('click', () => {
+                roomTypeDiv.remove();
+            });
+
+            return roomTypeDiv;
+        }
+
+        // Add a new room type when the button is clicked
+        addRoomTypeButton.addEventListener('click', () => {
+            const index = roomTypesContainer.children.length; // Use the current count as the index
+            const newRoomType = createRoomTypeFields(index);
+            roomTypesContainer.appendChild(newRoomType);
+        });
+    });
+</script>
+</html>

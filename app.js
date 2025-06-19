@@ -63,6 +63,44 @@ app.get('/new-customer-form', async (req, res) => {
 	});
 });
 
+app.get('/new-retreat-form', (req, res) => {
+	res.render('new-retreat-form');
+});
+
+//Create a new retreat:
+app.post('/new-retreat', async (req, res) => {
+	const { retreat_name, start_date, length, meal_options_input, room_types} = req.body;
+
+	// Convert meal options to JSON string
+	const mealOptionsArray = meal_options_input.split(',').map(option => option.trim()).filter(option => option !== '');
+	const mealOptionsJson = JSON.stringify(mealOptionsArray);
+
+	const retreat_query = "INSERT INTO retreats (retreat_name, start_date, length, meal_options) VALUES (?, ?, ?, ?)";
+	const room_options_query = "INSERT INTO room_options (retreat_id, room_name, price, capacity, inventory) VALUES (?, ?, ?, ?, ?)";
+
+	try {
+		// Insert the retreat into the retreats table
+		const [retreatResult] = await db.query(retreat_query, [retreat_name, start_date, length, mealOptionsJson]);
+
+		const retreatID = retreatResult.insertId; // Get the ID of the newly created retreat
+
+		// Insert each room type into the room_options table with the retreat ID
+		if (Array.isArray(room_types) && room_types.length > 0) {
+			for (const room of room_types) {
+				const { room_name, price, capacity, inventory } = room;
+
+				await db.query(room_options_query, [retreatID, room_name, price, capacity, inventory]);
+			}
+		}
+		// Redirect to the show-retreats page after successful creation
+		console.log('Retreat created successfully:', retreat_name);
+		res.status(201).redirect('/show-retreats');
+	} catch (err) {
+		console.error('Error creating retreat or room options:', err);
+		res.status(500).json({message: 'Error creating retreat or room options'});
+	}
+});
+
 // Create a new customer & reservation:
 app.post('/new-reservation', async (req, res) => {
 	const {name, email, phone, retreat_id, start_date, guests, meal_choices} = req.body;
