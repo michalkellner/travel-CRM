@@ -3,9 +3,18 @@
 	<head>
 		{{> main}}
 		<title>New Customer and Booking</title>
+		<pre>{{{json retreats}}}</pre>
+
+		<script id="retreats-data" type="application/json">
+			{{{json retreats}}}
+		</script>
 		<script>
 			document.addEventListener('DOMContentLoaded', () => {
-				const retreats = {{{json retreats}}}; // Pass the JSON encoded retreat array
+				console.log("DOM fully loaded and parsed");
+				const retreats = JSON.parse(document.getElementById('retreats-data').textContent);
+
+				console.log("Retreats loaded into script: ", retreats)
+
 
 				const retreatSelect = document.getElementById('retreat_id');
 				const startDateField = document.getElementById('start_date');
@@ -13,11 +22,14 @@
 
 				function updateRetreatDetails() {
 					const selectedId = retreatSelect.value;
-					const retreat = retreats.find(r => r.reteat_id == selectedId);
+					const retreat = retreats.find(r => r.retreat_id == selectedId);
 
 					if (retreat) {
 						// Update start date
-						startDateField.value = retreat.start_date;
+						const dateObj = new Date(retreat.start_date);
+						dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset()); // Adjust for local time zone
+						const formattedDate = dateObj.toISOString().split('T')[0];
+  						startDateField.value = formattedDate;
 
 						// Update meal options
 						mealSelect.innerHTML = '';
@@ -59,7 +71,7 @@
 				<select name="retreat_id" id="retreat_id" required>
 					{{#each retreats}}
 						<option value="{{this.retreat_id}}">
-							{{this.retreat_name}}
+							{{this.retreat_name}} - {{formatDate this.start_date}}
 						</option>
 					{{/each}}
 				</select>

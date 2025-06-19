@@ -39,14 +39,24 @@ const db = mysql.createConnection({
 // });
 
 // when creating new reservation, get necessary info
-app.get('/new-reservation', async (req, res) => {
+app.get('/new-customer-form', async (req, res) => {
 	const [retreats] = await db.query('SELECT * FROM retreats');
 
 	// Convert meal options from JSON string to array
-	const formattedRetreats = retreats.map(r => ({
-		...r,
-		meal_options: typeof r.meal_options === 'string' ? JSON.parse(r.meal_options) : r.meal_options,
-	}));
+	const formattedRetreats = retreats.map(r => {
+		let parsedMeals = [];
+		try {
+			parsedMeals = typeof r.meal_options === 'string'
+			? JSON.parse(r.meal_options)
+			: r.meal_options || [];
+		} catch (err) {
+			console.error(`Failed to parse meal_options for retreat_id ${r.retreat_id}:`, err.message);
+		}
+		return {
+			...r,
+			meal_options: parsedMeals
+		};
+	});
 
 	res.render('new-customer-form', {
 		retreats: formattedRetreats
@@ -59,7 +69,7 @@ app.post('/new-reservation', async (req, res) => {
 	const cust_query = "INSERT INTO customers (customer_name, email, phone_number) VALUES (?, ?, ?)";
 	const res_query = "INSERT INTO bookings_general (customer_id, retreat_id, num_guests, total_price, status, retreat_date, meal_choices) VALUES (?, ?, ?, ?, ?, ?, ?)";
 	try {
-		const [customer] = await db.query(query, [name, email, phone]);
+		const [customer] = await db.query(cust_query, [name, email, phone]);
 
 		const customerID = customer.customer_id;
 		await db.query(res_query, [customerID, num_guests]);
@@ -70,6 +80,19 @@ app.post('/new-reservation', async (req, res) => {
 	}
 });
 
+// get all retreats
+app.get('/show-retreats', async (req, res) => {
+	const [retreats] = await db.query('SELECT * FROM retreats');
+
+	const formattedRetreats = retreats.map(r => ({
+		...r,
+		meal_options: typeof r.meal_options === 'string'
+			? JSON.parse(r.meal_options)
+			: r.meal_options || []
+	}));
+
+	res.render('show-retreats', { retreats: formattedRetreats });
+});
 
 // Search customers by:
 app.get('/customers', async (req, res) => {
@@ -108,6 +131,17 @@ app.get('/customers', async (req, res) => {
 Handlebars.registerHelper('json', function (context) {
 	return JSON.stringify(context, null, 2);
 });
+
+Handlebars.registerHelper('formatDate', function (dateString) {
+	const date = new Date(dateString);
+	return date.toLocaleDateString('en-US', {
+	  weekday: 'long',
+	  year: 'numeric',
+	  month: 'long',
+	  day: 'numeric'
+	});
+  });
+  
 
 var hbs = exphbs.create({
 	extname: ".hbs",

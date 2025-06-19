@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<body>
+    {{>main}}
+  <h1>All Retreats</h1>
+
+  {{#each retreats}}
+    <div class="retreat">
+      <h2>{{retreat_name}}</h2>
+      <p><strong>Start Date:</strong> {{start_date}}</p>
+      <p><strong>Length:</strong> {{length}} days</p>
+
+      {{#if meal_options.length}}
+        <p><strong>Meal Options:</strong></p>
+        <ul>
+          {{#each meal_options}}
+            <li>{{this}}</li>
+          {{/each}}
+        </ul>
+      {{else}}
+        <p><em>No meal options listed.</em></p>
+      {{/if}}
+    </div>
+  {{/each}}
+
+</body>
+</html>
