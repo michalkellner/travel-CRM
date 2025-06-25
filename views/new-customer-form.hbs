@@ -10,42 +10,67 @@
 		</script>
 		<script>
 			document.addEventListener('DOMContentLoaded', () => {
-				console.log("DOM fully loaded and parsed");
-				const retreats = JSON.parse(document.getElementById('retreats-data').textContent);
+    const retreats = JSON.parse(document.getElementById('retreats-data').textContent);
 
-				console.log("Retreats loaded into script: ", retreats)
+    const retreatSelect = document.getElementById('retreat_id');
+    const startDateField = document.getElementById('start_date');
+    const numGuestsInput = document.getElementById('num_guests');
+    const mealChoicesContainer = document.getElementById('meal-choices-container');
 
+    function updateRetreatDetails() {
+        const selectedId = retreatSelect.value;
+        const retreat = retreats.find(r => r.retreat_id == selectedId);
 
-				const retreatSelect = document.getElementById('retreat_id');
-				const startDateField = document.getElementById('start_date');
-				const mealSelect = document.getElementById('meal_choices');
+        if (retreat) {
+            // Update start date
+            const dateObj = new Date(retreat.start_date);
+            dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset()); // Adjust for local time zone
+            const formattedDate = dateObj.toISOString().split('T')[0];
+            startDateField.value = formattedDate;
 
-				function updateRetreatDetails() {
-					const selectedId = retreatSelect.value;
-					const retreat = retreats.find(r => r.retreat_id == selectedId);
+            // Update meal options dynamically based on the number of guests
+            numGuestsInput.addEventListener('input', () => {
+                const numGuests = parseInt(numGuestsInput.value, 10);
 
-					if (retreat) {
-						// Update start date
-						const dateObj = new Date(retreat.start_date);
-						dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset()); // Adjust for local time zone
-						const formattedDate = dateObj.toISOString().split('T')[0];
-  						startDateField.value = formattedDate;
+                // Clear existing meal choice dropdowns
+                mealChoicesContainer.innerHTML = '';
 
-						// Update meal options
-						mealSelect.innerHTML = '';
-						retreat.meal_options.forEach(option => {
-							const opt = document.createElement('option');
-							opt.value = option;
-							opt.textContent = option;
-							mealSelect.appendChild(opt);
-						});
-					}
+                if (isNaN(numGuests) || numGuests <= 0) {
+                    mealChoicesContainer.innerHTML = '<p>Please enter a valid number of guests.</p>';
+                    return;
+                }
 
-				}
+                // Create a dropdown for each guest
+                for (let i = 0; i < numGuests; i++) {
+                    const label = document.createElement('label');
+                    label.textContent = `Guest ${i + 1} Meal Preference:`;
 
-				retreatSelect.addEventListener('change', updateRetreatDetails);
-				updateRetreatDetails(); // Trigger on load
-			});
+                    const select = document.createElement('select');
+                    select.name = `meal_choices[${i}]`;
+                    select.required = true;
+
+					// after the label and the select element, start a new line
+					label.style.display = 'block';
+
+                    // Populate the dropdown with meal options
+                    retreat.meal_options.forEach(option => {
+                        const opt = document.createElement('option');
+                        opt.value = option;
+                        opt.textContent = option;
+                        select.appendChild(opt);
+                    });
+
+                    // Append the label and dropdown to the container
+                    mealChoicesContainer.appendChild(label);
+                    mealChoicesContainer.appendChild(select);
+                }
+            });
+        }
+    }
+
+    retreatSelect.addEventListener('change', updateRetreatDetails);
+    updateRetreatDetails(); // Trigger on load
+});
 		</script>
 	</head>
 	<body>
@@ -80,24 +105,13 @@
 				<input type="date" id="start_date" name="start_date" readonly required>
 
 				<div class="new-customer-label">Number of Guests</div>
-				<input type="number" id="guests" name="guests" min="1" required>
+				<input type="number" id="num_guests" name="num_guests" min="1" required>
 
 				<div class="new-customer-label">Meal Preferences</div>
-				<select id="meal_choices" name="meal_choices[]" multiple required></select>
+				<div id="meal-choices-container"></div>
 
 				<input type="submit" value="Submit">
 			</form>
-			{{!-- <div class="new-customer-title">Add a new customer:</div>
-			<form class="new-customer-form" id="new-customer-form" action="/customers" method="POST">
-				<div class="new-customer-label">Name</div>
-				<input type="text" id="name" name="name">
-
-				<div class="new-customer-label">Email</div>
-				<input type="text" id="email" name="email">
-				<div class="new-customer-label">Phone Number</div>
-				<input type="text" id="phone" name="phone">
-				<input type="submit" value="Submit">
-			</form> --}}
 			<div id="new-customer-confirmation"> Customer added to database.</div>
 		</div>
 		{{> footer}}

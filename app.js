@@ -73,14 +73,14 @@ app.post('/new-retreat', async (req, res) => {
 
 	// Convert meal options to JSON string
 	const mealOptionsArray = meal_options_input.split(',').map(option => option.trim()).filter(option => option !== '');
-	const mealOptionsJson = JSON.stringify(mealOptionsArray);
 
-	const retreat_query = "INSERT INTO retreats (retreat_name, start_date, length, meal_options) VALUES (?, ?, ?, ?)";
+	const retreat_query = "INSERT INTO retreats (retreat_name, start_date, length) VALUES (?, ?, ?)";
 	const room_options_query = "INSERT INTO room_options (retreat_id, room_name, price, capacity, inventory) VALUES (?, ?, ?, ?, ?)";
+	const meal_choices_query = "INSERT INTO meal_choices (retreat_id, meal_name) VALUES (?, ?)";
 
 	try {
 		// Insert the retreat into the retreats table
-		const [retreatResult] = await db.query(retreat_query, [retreat_name, start_date, length, mealOptionsJson]);
+		const [retreatResult] = await db.query(retreat_query, [retreat_name, start_date, length]);
 
 		const retreatID = retreatResult.insertId; // Get the ID of the newly created retreat
 
@@ -92,25 +92,48 @@ app.post('/new-retreat', async (req, res) => {
 				await db.query(room_options_query, [retreatID, room_name, price, capacity, inventory]);
 			}
 		}
+
+		// Insert each meal option into the meal_choices table with the retreat ID
+		if (Array.isArray(mealOptionsArray) && mealOptionsArray.length > 0) {
+			for (const mealOption of mealOptionsArray) {
+				await db.query(meal_choices_query, [retreatID, mealOption]);
+			}
+		}
+	
 		// Redirect to the show-retreats page after successful creation
 		console.log('Retreat created successfully:', retreat_name);
 		res.status(201).redirect('/show-retreats');
 	} catch (err) {
-		console.error('Error creating retreat or room options:', err);
-		res.status(500).json({message: 'Error creating retreat or room options'});
+		console.error('Error creating retreat or room or meal options:', err);
+		res.status(500).json({message: 'Error creating retreat or room or meal options'});
 	}
 });
 
 // Create a new customer & reservation:
 app.post('/new-reservation', async (req, res) => {
-	const {name, email, phone, retreat_id, start_date, guests, meal_choices} = req.body;
+	const {name, email, phone, retreat_id, start_date, num_guests, meal_choices} = req.body;
 	const cust_query = "INSERT INTO customers (customer_name, email, phone_number) VALUES (?, ?, ?)";
-	const res_query = "INSERT INTO bookings_general (customer_id, retreat_id, num_guests, total_price, status, retreat_date, meal_choices) VALUES (?, ?, ?, ?, ?, ?, ?)";
+	const res_query = "INSERT INTO bookings_general (customer_id, retreat_id, num_guests, total_price, status, retreat_date) VALUES (?, ?, ?, ?, ?, ?)";
+	const room_query = "INSERT INTO bookings_rooms (booking_id, room_type_id, customer_id) VALUES (?, ?, ?)";
+	const meal_query = "INSERT INTO bookings_meals (booking_id, customer_id, meal_choice_id) VALUES (?, ?, ?)";
+
 	try {
+		// Insert the new customer into the customers table
 		const [customer] = await db.query(cust_query, [name, email, phone]);
 
-		const customerID = customer.customer_id;
-		await db.query(res_query, [customerID, num_guests]);
+		//Get the ID of the newly created customer
+		const customerID = customer.insertId;
+
+		// Insert the new reservation into the bookings_general table
+		const [booking] = await db.query(res_query, [customerID, retreat_id, num_guests, 0, 'awaiting call', start_date]);
+
+		// Get the ID of the newly created booking
+		const bookingID = booking.insertId;
+
+		// TODO: Calculate total price based on room type and meal choices
+		//TODO: add all rooms to booking_rooms table
+		// TODO: add all meal choices to booking_meals table
+
 		res.status(201).redirect('/show-customers');
 	} catch (err) {
 		console.error('Error creating customer:', err);
@@ -130,6 +153,19 @@ app.get('/show-retreats', async (req, res) => {
 	}));
 
 	res.render('show-retreats', { retreats: formattedRetreats });
+});
+
+// get room options for a specific retreat
+app.get('/room-options/:retreat_id', async (req, res) => {
+	const {retreat_id} = req.params;
+
+	try {
+		const [rooms] = await db.query('SELECT * FROM room_options WHERE retreat_id = ?', [retreatId]);
+		res.json(rooms);
+	} catch (err) {
+		console.error('Error fetching room options:', err);
+		res.status(500).json({message: 'Error fetching room options'});
+	}
 });
 
 // Search customers by:
