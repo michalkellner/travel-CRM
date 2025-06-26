@@ -262,6 +262,70 @@ app.get("/show-customers", function(req, res){
 	res.render("show-customers");
 });
 
+// Retreat Dashboard Route
+app.get('/retreat-dashboard/:retreat_id', async (req, res) => {
+    const { retreat_id } = req.params;
+
+    try {
+        // Fetch retreat details
+        const [retreatDetails] = await db.query('SELECT * FROM retreats WHERE retreat_id = ?', [retreat_id]);
+
+        // Fetch room options for the retreat
+        const [roomOptions] = await db.query('SELECT * FROM room_options WHERE retreat_id = ?', [retreat_id]);
+
+        // Fetch meal options for the retreat and the number of times each meal is chosen from the bookings_meals table
+		// Note: Assuming meal_choices table has a column 'meal_name' for meal names
+		// and bookings_meals table has a column 'meal_choice_id' that references meal_choices
+		const [mealOptions] = await db.query(`
+			SELECT 
+				mc.meal_name, 
+				COUNT(bm.meal_choice_id) AS meal_count
+			FROM meal_choices mc
+			LEFT JOIN bookings_meals bm ON mc.meal_id = bm.meal_choice_id
+			WHERE mc.retreat_id = ?
+			GROUP BY mc.meal_id, mc.meal_name
+		`, [retreat_id]);
+
+		// Fetch customer details, number of guests, number of rooms, and total price they are paying
+		const [customers] = await db.query(`
+			SELECT
+				c.customer_name,
+				c.email,
+				bg.num_guests,
+				COUNT(br.booked_room_id) AS num_rooms,
+				bg.total_price
+			FROM customers c
+			INNER JOIN bookings_general bg ON c.customer_id = bg.customer_id
+			LEFT JOIN bookings_rooms br ON bg.booking_id = br.booking_id AND bg.retreat_id = ?
+			WHERE bg.retreat_id = ?
+			GROUP BY c.customer_id, bg.num_guests, bg.total_price
+		`, [retreat_id, retreat_id]);
+
+		// Fetch booked rooms for the retreat
+		const [bookedRooms] = await db.query(`
+			SELECT
+				ro.room_name,
+				c.customer_name,
+				ro.capacity
+			FROM bookings_rooms br
+			INNER JOIN room_options ro ON br.room_type_id = ro.room_type_id
+			INNER JOIN customers c ON br.customer_id = c.customer_id
+			WHERE ro.retreat_id = ?
+		`, [retreat_id]);
+
+        // Render the retreat dashboard with the fetched data
+        res.render('retreat-dashboard', {
+            retreat: retreatDetails[0],
+            rooms: roomOptions,
+            meals: mealOptions,
+			customers: customers,
+			bookedRooms: bookedRooms
+        });
+    } catch (err) {
+        console.error('Error fetching retreat details:', err);
+        res.status(500).json({ message: 'Error fetching retreat details' });
+    }
+});
 
 
 var port = process.env.PORT || 8080;

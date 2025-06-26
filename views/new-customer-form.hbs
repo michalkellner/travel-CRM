@@ -12,6 +12,7 @@
 
             const retreatSelect = document.getElementById('retreat_id');
             const startDateField = document.getElementById('start_date');
+            const endDateField = document.getElementById('end_date');
             const numGuestsInput = document.getElementById('num_guests');
             const mealChoicesContainer = document.getElementById('meal-choices-container');
             const roomsContainer = document.getElementById('rooms-container');
@@ -154,10 +155,16 @@
 
                 if (retreat) {
                     // Update start date
-                    const dateObj = new Date(retreat.start_date);
-                    dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset()); // Adjust for local time zone
-                    const formattedDate = dateObj.toISOString().split('T')[0];
-                    startDateField.value = formattedDate;
+                    const startDate = new Date(retreat.start_date);
+                    startDate.setMinutes(startDate.getMinutes() - startDate.getTimezoneOffset()); // Adjust for local time zone
+                    const formattedStartDate = startDate.toISOString().split('T')[0];
+                    startDateField.value = formattedStartDate;
+
+                    // Calculate and update end date
+                    const endDate = new Date(startDate);
+                    endDate.setDate(endDate.getDate() + retreat.length); // Add retreat length to start date
+                    const formattedEndDate = endDate.toISOString().split('T')[0];
+                    endDateField.value = formattedEndDate;
 
                     // Reset price to 0
                     totalPrice = 0;
@@ -222,6 +229,11 @@
             <div class="form-group">
                 <label for="start_date">Retreat Start Date</label>
                 <input type="date" id="start_date" name="start_date" readonly required>
+            </div>
+
+            <div class="form-group">
+                <label for="end_date">Retreat End Date</label>
+                <input type="date" id="end_date" name="end_date" readonly required>
             </div>
 
             <div class="form-group">

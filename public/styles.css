@@ -135,6 +135,38 @@ table td {
     color: #28536B; /* Deep teal for text */
 }
 
+/* Customers Table */
+.customers-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #F6F0ED; /* Soft beige for table background */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.customers-table th, .customers-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #7EA8BE; /* Calming blue for borders */
+}
+
+.customers-table th {
+    background-color: #7EA8BE; /* Calming blue for headers */
+    color: #F6F0ED; /* Soft beige for text */
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.customers-table tr:hover {
+    background-color: #C2948A; /* Warm pinkish tone on hover */
+}
+
+.customers-table td {
+    color: #28536B; /* Deep teal for text */
+}
+
 /* Form Inputs and Selects */
 input[type="text"], input[type="email"], input[type="number"], input[type="date"], select {
     width: 60%; /* Reduce the width to 60% */
@@ -244,4 +276,47 @@ button:hover {
 
 .btn-delete:hover {
     background-color: #7EA8BE; /* Calming blue on hover */
+}
+
+/* Retreats List */
+.retreats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Add spacing between rows */
+    margin-top: 20px;
+}
+
+.retreat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: #F6F0ED; /* Soft beige for row background */
+    border: 1px solid #7EA8BE; /* Calming blue for borders */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.retreat-row:hover {
+    background-color: #C2948A; /* Warm pinkish tone on hover */
+    transform: scale(1.02); /* Slight zoom effect on hover */
+    cursor: pointer;
+}
+
+.retreat-link {
+    text-decoration: none; /* Remove underline */
+    color: inherit; /* Inherit text color */
+}
+
+.retreat-name {
+    font-weight: bold;
+    color: #28536B; /* Deep teal for text */
+    flex: 2; /* Make the name take more space */
+}
+
+.retreat-date, .retreat-length {
+    color: #28536B; /* Deep teal for secondary text */
+    flex: 1; /* Equal space for date and length */
+    text-align: center;
 }

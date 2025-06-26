@@ -1,28 +1,25 @@
 <!DOCTYPE html>
-<html>
-<body>
-    {{>main}}
-  <h1>All Retreats</h1>
+<html lang="en">
+    <head>
+        {{> main}}
+        <title>All Retreats</title>
+    </head>
+    <body>
+        <div class="container">
+            <h2 class="page-title">All Retreats</h2>
 
-  {{#each retreats}}
-    <div class="retreat">
-      <h2>{{retreat_name}}</h2>
-      <p><strong>Start Date:</strong> {{start_date}}</p>
-      <p><strong>Length:</strong> {{length}} days</p>
-
-      {{#if meal_options.length}}
-        <p><strong>Meal Options:</strong></p>
-        <ul>
-          {{#each meal_options}}
-            <li>{{this}}</li>
-          {{/each}}
-        </ul>
-      {{else}}
-        <p><em>No meal options listed.</em></p>
-      {{/if}}
-    </div>
-  {{/each}}
-
-</body>
-{{>footer}}
+            <div class="retreats-list">
+                {{#each retreats}}
+                <a href="/retreat-dashboard/{{this.retreat_id}}" class="retreat-link">
+                    <div class="retreat-row">
+                        <div class="retreat-name">{{this.retreat_name}}</div>
+                        <div class="retreat-date">{{formatDate this.start_date}}</div>
+                        <div class="retreat-length">{{this.length}} days</div>
+                    </div>
+                </a>
+                {{/each}}
+            </div>
+        </div>
+        {{> footer}}
+    </body>
 </html>
