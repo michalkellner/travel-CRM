@@ -1,35 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		{{> main}}
-		<title>New Customer and Booking</title>
-		<pre>{{{json retreats}}}</pre>
+<head>
+    {{> main}}
+    <title>New Customer and Booking</title>
+    <script id="retreats-data" type="application/json">
+        {{{json retreats}}}
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const retreats = JSON.parse(document.getElementById('retreats-data').textContent);
 
-		<script id="retreats-data" type="application/json">
-			{{{json retreats}}}
-		</script>
-		<script>
-			document.addEventListener('DOMContentLoaded', () => {
-    const retreats = JSON.parse(document.getElementById('retreats-data').textContent);
+            const retreatSelect = document.getElementById('retreat_id');
+            const startDateField = document.getElementById('start_date');
+            const numGuestsInput = document.getElementById('num_guests');
+            const mealChoicesContainer = document.getElementById('meal-choices-container');
+            const roomsContainer = document.getElementById('rooms-container');
+            const addRoomButton = document.getElementById('add-room-button');
+            const totalPriceField = document.getElementById('total-price');
 
-    const retreatSelect = document.getElementById('retreat_id');
-    const startDateField = document.getElementById('start_date');
-    const numGuestsInput = document.getElementById('num_guests');
-    const mealChoicesContainer = document.getElementById('meal-choices-container');
+            let totalPrice = 0;
+            let roomOptions = []; // Global variable to store room options
 
-    function updateRetreatDetails() {
-        const selectedId = retreatSelect.value;
-        const retreat = retreats.find(r => r.retreat_id == selectedId);
+            // Fetch room options for the selected retreat
+            async function fetchRoomOptions(retreatId) {
+                const response = await fetch(`/room-options/${retreatId}`);
+                return response.json();
+            }
 
-        if (retreat) {
-            // Update start date
-            const dateObj = new Date(retreat.start_date);
-            dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset()); // Adjust for local time zone
-            const formattedDate = dateObj.toISOString().split('T')[0];
-            startDateField.value = formattedDate;
+            // Fetch meal options for the selected retreat
+            async function fetchMealOptions(retreatID) {
+                const response = await fetch(`/meal-options/${retreatID}`);
+                return response.json();
+            }
 
-            // Update meal options dynamically based on the number of guests
-            numGuestsInput.addEventListener('input', () => {
+            // Update meal options dynamically based on number of guests
+            async function updateMealOptions() {
+                const selectedId = retreatSelect.value;
+                const mealOptions = await fetchMealOptions(selectedId);
+
                 const numGuests = parseInt(numGuestsInput.value, 10);
 
                 // Clear existing meal choice dropdowns
@@ -49,71 +57,197 @@
                     select.name = `meal_choices[${i}]`;
                     select.required = true;
 
-					// after the label and the select element, start a new line
-					label.style.display = 'block';
-
                     // Populate the dropdown with meal options
-                    retreat.meal_options.forEach(option => {
+                    mealOptions.forEach(option => {
                         const opt = document.createElement('option');
-                        opt.value = option;
-                        opt.textContent = option;
+                        opt.value = option.meal_id; // Use meal_id as the value
+                        opt.textContent = option.meal_name; // Display meal name
                         select.appendChild(opt);
                     });
 
                     // Append the label and dropdown to the container
                     mealChoicesContainer.appendChild(label);
                     mealChoicesContainer.appendChild(select);
+
+                    // Add a line break for better readability
+                    mealChoicesContainer.appendChild(document.createElement('br'));
+                }
+            }
+
+            // Update room options when retreat changes
+            async function updateRoomOptions() {
+                const selectedId = retreatSelect.value;
+                roomOptions = await fetchRoomOptions(selectedId);
+            }
+
+            // Add a new room dropdown
+            function addRoom() {
+                const roomDiv = document.createElement('div');
+                roomDiv.classList.add('room-entry');
+
+                const label = document.createElement('label');
+                label.textContent = 'Select Room:';
+
+                const select = document.createElement('select');
+                select.name = 'rooms[]';
+                select.required = true;
+
+                // Add a default placeholder option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Select a room';
+                defaultOption.disabled = true;
+                defaultOption.selected = true;
+                select.appendChild(defaultOption);
+
+                // Populate the dropdown with room options
+                roomOptions.forEach(room => {
+                    const option = document.createElement('option');
+                    option.value = room.room_type_id; // Use room_id as the value
+                    option.textContent = `${room.room_name} - $${room.price} - Capacity: ${room.capacity} guests`;
+                    option.dataset.price = room.price; // Store price in a data attribute
+                    select.appendChild(option);
+                });
+
+                // Add event listener to update total price when a room is selected
+                select.addEventListener('change', () => {
+                    const previousPrice = parseFloat(select.dataset.previousPrice || 0);
+                    const selectedRoom = roomOptions.find(room => room.room_type_id == select.value);
+                    const roomPrice = parseFloat(selectedRoom.price);
+
+                    // Update total price
+                    totalPrice -= previousPrice; // Subtract previous room price
+                    totalPrice += roomPrice;
+                    totalPriceField.value = totalPrice.toFixed(2);
+
+                    // Update the previous price in the select element
+                    select.dataset.previousPrice = roomPrice;
+                });
+
+                // Add a remove button for the room
+                const removeButton = document.createElement('button');
+                removeButton.type = 'button';
+                removeButton.textContent = 'Remove';
+                removeButton.addEventListener('click', () => {
+                    const roomPrice = parseFloat(select.dataset.previousPrice || 0);
+
+                    // Update total price
+                    totalPrice -= roomPrice;
+                    totalPriceField.value = totalPrice.toFixed(2);
+
+                    roomDiv.remove();
+                });
+
+                // Append elements to the room container
+                roomDiv.appendChild(label);
+                roomDiv.appendChild(select);
+                roomDiv.appendChild(removeButton);
+                roomsContainer.appendChild(roomDiv);
+            }
+
+            // Add event listener for the "Add Room" button
+            addRoomButton.addEventListener('click', addRoom);
+
+            function updateRetreatDetails() {
+                const selectedId = retreatSelect.value;
+                const retreat = retreats.find(r => r.retreat_id == selectedId);
+
+                if (retreat) {
+                    // Update start date
+                    const dateObj = new Date(retreat.start_date);
+                    dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset()); // Adjust for local time zone
+                    const formattedDate = dateObj.toISOString().split('T')[0];
+                    startDateField.value = formattedDate;
+
+                    // Reset price to 0
+                    totalPrice = 0;
+                }
+            }
+
+            retreatSelect.addEventListener('change', async () => {
+                updateRetreatDetails();
+                await updateRoomOptions();
+                roomsContainer.innerHTML = ''; // Clear existing rooms
+                totalPrice = 0; // Reset total price when retreat changes
+                if (numGuestsInput.value) {
+                    updateMealOptions();
                 }
             });
-        }
-    }
 
-    retreatSelect.addEventListener('change', updateRetreatDetails);
-    updateRetreatDetails(); // Trigger on load
-});
-		</script>
-	</head>
-	<body>
-		
-		<div class="new-customer-container">
-			<div class="new-customer-title">Add a new customer and booking:</div>
+            numGuestsInput.addEventListener('input', () => {
+                updateMealOptions();
+            });
 
-			<form class="new-customer-form" id="new-customer-form" action="/new-reservation" method="POST">
-				<!-- Customer Info -->
-				<div class="new-customer-label">Name</div>
-				<input type="text" id="name" name="name" required>
+            updateRetreatDetails(); // Trigger on load
+            updateRoomOptions(); // Fetch room options on load
 
-				<div class="new-customer-label">Email</div>
-				<input type="email" id="email" name="email" required>
+            // Initialize total price
+            totalPriceField.value = totalPrice.toFixed(2);
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2 class="page-title">Book Your Next Retreat</h2>
 
-				<div class="new-customer-label">Phone Number</div>
-				<input type="text" id="phone" name="phone" required>
+        <form class="new-customer-form" id="new-customer-form" action="/new-reservation" method="POST">
+            <!-- Customer Info -->
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" placeholder="Enter your name" required>
+            </div>
 
-				<!-- Booking Info -->
-				<hr>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+            </div>
 
-				<div class="new-customer-label">Select Retreat</div>
-				<select name="retreat_id" id="retreat_id" required>
-					{{#each retreats}}
-						<option value="{{this.retreat_id}}">
-							{{this.retreat_name}} - {{formatDate this.start_date}}
-						</option>
-					{{/each}}
-				</select>
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="text" id="phone" name="phone" placeholder="Enter your phone number" required>
+            </div>
 
-				<div class="new-customer-label">Retreat Start Date</div>
-				<input type="date" id="start_date" name="start_date" readonly required>
+            <!-- Booking Info -->
+            <div class="form-group">
+                <label for="retreat_id">Select Retreat</label>
+                <select name="retreat_id" id="retreat_id" required>
+                    {{#each retreats}}
+                        <option value="{{this.retreat_id}}">
+                            {{this.retreat_name}} - {{formatDate this.start_date}}
+                        </option>
+                    {{/each}}
+                </select>
+            </div>
 
-				<div class="new-customer-label">Number of Guests</div>
-				<input type="number" id="num_guests" name="num_guests" min="1" required>
+            <div class="form-group">
+                <label for="start_date">Retreat Start Date</label>
+                <input type="date" id="start_date" name="start_date" readonly required>
+            </div>
 
-				<div class="new-customer-label">Meal Preferences</div>
-				<div id="meal-choices-container"></div>
+            <div class="form-group">
+                <label for="num_guests">Number of Guests</label>
+                <input type="number" id="num_guests" name="num_guests" min="1" placeholder="Enter number of guests" required>
+            </div>
 
-				<input type="submit" value="Submit">
-			</form>
-			<div id="new-customer-confirmation"> Customer added to database.</div>
-		</div>
-		{{> footer}}
-	</body>
+            <div class="form-group">
+                <label>Meal Preferences</label>
+                <div id="meal-choices-container"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Rooms</label>
+                <div id="rooms-container"></div>
+                <button type="button" id="add-room-button" class="btn">Add Room</button>
+            </div>
+
+            <div class="form-group">
+                <label for="total-price">Total Price</label>
+                <input type="text" id="total-price" name="total_price" readonly value="0">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+    {{> footer}}
+</body>
 </html>

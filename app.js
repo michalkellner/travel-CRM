@@ -111,7 +111,7 @@ app.post('/new-retreat', async (req, res) => {
 
 // Create a new customer & reservation:
 app.post('/new-reservation', async (req, res) => {
-	const {name, email, phone, retreat_id, start_date, num_guests, meal_choices} = req.body;
+	const {name, email, phone, retreat_id, start_date, num_guests, meal_choices, rooms, total_price} = req.body;
 	const cust_query = "INSERT INTO customers (customer_name, email, phone_number) VALUES (?, ?, ?)";
 	const res_query = "INSERT INTO bookings_general (customer_id, retreat_id, num_guests, total_price, status, retreat_date) VALUES (?, ?, ?, ?, ?, ?)";
 	const room_query = "INSERT INTO bookings_rooms (booking_id, room_type_id, customer_id) VALUES (?, ?, ?)";
@@ -125,11 +125,24 @@ app.post('/new-reservation', async (req, res) => {
 		const customerID = customer.insertId;
 
 		// Insert the new reservation into the bookings_general table
-		const [booking] = await db.query(res_query, [customerID, retreat_id, num_guests, 0, 'awaiting call', start_date]);
+		const [booking] = await db.query(res_query, [customerID, retreat_id, num_guests, total_price, 'awaiting call', start_date]);
 
 		// Get the ID of the newly created booking
 		const bookingID = booking.insertId;
 
+		// Insert the room choices into the bookings_rooms table
+		if (Array.isArray(rooms) && rooms.length > 0) {
+			for (const room of rooms) { // assuming rooms is an array of room type IDs
+				await db.query(room_query, [bookingID, room, customerID]);
+			}
+		}
+
+		// Insert the meal choices into the bookings_meals table
+		if (Array.isArray(meal_choices) && meal_choices.length > 0) {
+			for (const meal of meal_choices) { // assuming meal_choices is an array of meal choice IDs
+				await db.query(meal_query, [bookingID, customerID, meal]);
+			}
+		}
 		// TODO: Calculate total price based on room type and meal choices
 		//TODO: add all rooms to booking_rooms table
 		// TODO: add all meal choices to booking_meals table
@@ -146,10 +159,7 @@ app.get('/show-retreats', async (req, res) => {
 	const [retreats] = await db.query('SELECT * FROM retreats');
 
 	const formattedRetreats = retreats.map(r => ({
-		...r,
-		meal_options: typeof r.meal_options === 'string'
-			? JSON.parse(r.meal_options)
-			: r.meal_options || []
+		...r
 	}));
 
 	res.render('show-retreats', { retreats: formattedRetreats });
@@ -160,11 +170,24 @@ app.get('/room-options/:retreat_id', async (req, res) => {
 	const {retreat_id} = req.params;
 
 	try {
-		const [rooms] = await db.query('SELECT * FROM room_options WHERE retreat_id = ?', [retreatId]);
+		const [rooms] = await db.query('SELECT * FROM room_options WHERE retreat_id = ?', [retreat_id]);
 		res.json(rooms);
 	} catch (err) {
 		console.error('Error fetching room options:', err);
 		res.status(500).json({message: 'Error fetching room options'});
+	}
+});
+
+//get meal options for a specific retreat
+app.get('/meal-options/:retreat_id', async (req, res) => {
+	const {retreat_id} = req.params;
+
+	try {
+		const [meals] = await db.query('SELECT * FROM meal_choices WHERE retreat_id = ?', [retreat_id]);
+		res.json(meals);
+	} catch (err) {
+		console.error('Error fetching meal options:', err);
+		res.status(500).json({message: 'Error fetching meal options'});
 	}
 });
 

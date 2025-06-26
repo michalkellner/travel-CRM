@@ -13,90 +13,235 @@
 	src: url('fonts/CreatoDisplay-BoldItalic.otf')
 }
 
-table {
-	width: 80%;
-	margin: 20px auto;
-	border-collapse: collapse;
-	border: 1px solid #ddd;
-}
-
-th, td {
-	padding: 12px;
-	text-align: left;
-	border: 1px solid #ddd;
-}
-
-th {
-	background-color: palegoldenrod;
-}
-
-tr:hover {
-	background-color: #f1f1f1;
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #F6F0ED; /* Soft beige background */
+    margin: 0;
+    padding: 0;
+    color: #28536B; /* Deep teal for text */
 }
 
 .container {
-	text-align: center;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f7f9fc;
-    margin: 0;
-    padding: 0;
-}
-
-.new-customer-container {
-    max-width: 400px;
-    margin: 50px auto;
-    background-color: #ffffff;
-    padding: 30px;
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #F6F0ED; /* Soft beige for containers */
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.new-customer-title {
-    font-size: 1.5em;
-    margin-bottom: 20px;
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #7EA8BE; /* Calming blue for navbar */
+    padding: 10px 20px;
+    color: #F6F0ED; /* Soft beige for text */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #F6F0ED; /* Soft beige for the title */
+    text-decoration: none;
+}
+
+.navbar-links {
+    display: flex;
+    gap: 15px;
+}
+
+/* Navbar Links */
+.navbar-links a {
+    color: #F6F0ED; /* Soft beige for links */
+    text-decoration: none; /* Remove underline */
+    font-size: 16px;
+    transition: color 0.3s ease;
+}
+
+.navbar-links a:hover {
+    color: #C2948A; /* Warm pinkish tone on hover */
+    text-decoration: none; /* Ensure no underline on hover */
+}
+
+/* Footer */
+.footer {
+    background-color: #7EA8BE; /* Calming blue for footer */
+    color: #F6F0ED; /* Soft beige for text */
+    padding: 20px 0;
     text-align: center;
-    font-weight: bold;
-    color: #333;
+    margin-top: 30px;
 }
 
-.new-customer-label {
-    margin-top: 10px;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #555;
+.footer .grey-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
 }
 
-.new-customer-form input[type="text"],
-.new-customer-form input[type="email"],
-.new-customer-form input[type="submit"] {
+.footer .pages {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    color: #F6F0ED; /* Soft beige for the title */
+}
+
+.footer .grey-link, .footer a {
+    font-size: 16px;
+    color: #F6F0ED; /* Soft beige for links */
+    text-decoration: none !important; /* Remove underline */
+    transition: color 0.3s ease;
+}
+
+.footer .grey-link:hover {
+    color: #C2948A; /* Warm pinkish tone on hover */
+    text-decoration: none; /* Ensure no underline on hover */
+}
+
+/* Table */
+table {
     width: 100%;
-    padding: 10px;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #F6F0ED; /* Soft beige for table background */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+table th, table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #7EA8BE; /* Calming blue for borders */
+}
+
+table th {
+    background-color: #7EA8BE; /* Calming blue for headers */
+    color: #F6F0ED; /* Soft beige for text */
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+table tr:hover {
+    background-color: #C2948A; /* Warm pinkish tone on hover */
+}
+
+table td {
+    color: #28536B; /* Deep teal for text */
+}
+
+/* Form Inputs and Selects */
+input[type="text"], input[type="email"], input[type="number"], input[type="date"], select {
+    width: 60%; /* Reduce the width to 60% */
+    max-width: 400px; /* Limit the maximum width */
+    padding: 8px; /* Slightly smaller padding */
     margin-bottom: 15px;
     box-sizing: border-box;
-    border: 1px solid #ccc;
+    border: 1px solid #7EA8BE; /* Calming blue for borders */
     border-radius: 4px;
+    font-size: 14px; /* Slightly smaller font size */
+    background-color: #F6F0ED; /* Soft beige for inputs */
+    color: #28536B; /* Deep teal for text */
 }
 
-.new-customer-form input[type="submit"] {
-    background-color: #007bff;
-    color: white;
+input::placeholder {
+    color: #BBB193; /* Muted yellow for placeholder text */
+}
+
+/* Buttons */
+button, input[type="submit"] {
+    width: auto; /* Buttons should not stretch unnecessarily */
+    padding: 8px 16px; /* Slightly smaller padding */
+    font-size: 14px; /* Slightly smaller font size */
+    background-color: #7EA8BE; /* Calming blue for buttons */
+    color: #F6F0ED; /* Soft beige for text */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover, input[type="submit"]:hover {
+    background-color: #C2948A; /* Warm pinkish tone on hover */
+}
+
+/* Page Title */
+.page-title {
+    font-size: 2em;
+    text-align: center;
+    margin-bottom: 20px;
+    color: #28536B; /* Deep teal for text */
+    font-weight: bold;
+}
+
+/* Filter Inputs */
+#nameInput, #emailInput, #phoneInput {
+    width: 30%;
+    padding: 10px;
+    margin: 10px 5px;
+    border: 1px solid #7EA8BE; /* Calming blue for borders */
+    border-radius: 4px;
+    font-size: 16px;
+    box-sizing: border-box;
+    background-color: #F6F0ED; /* Soft beige for inputs */
+    color: #28536B; /* Deep teal for text */
+}
+
+/* Form Styling */
+.new-retreat-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Form Group Alignment */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #28536B; /* Deep teal for labels */
+}
+
+input, select, button {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #7EA8BE; /* Calming blue for borders */
+    border-radius: 4px;
+    background-color: #F6F0ED; /* Soft beige for inputs */
+    color: #28536B; /* Deep teal for text */
+}
+
+input::placeholder {
+    color: #BBB193; /* Muted yellow for placeholder text */
+}
+
+button {
+    background-color: #7EA8BE; /* Calming blue for buttons */
+    color: #F6F0ED; /* Soft beige for text */
     border: none;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
 
-.new-customer-form input[type="submit"]:hover {
-    background-color: #0056b3;
+button:hover {
+    background-color: #C2948A; /* Warm pinkish tone on hover */
 }
 
-#new-customer-confirmation {
-    margin-top: 20px;
-    text-align: center;
-    color: green;
-    font-weight: bold;
-    display: none;
+.btn-delete {
+    background-color: #C2948A; /* Warm pinkish tone for delete buttons */
 }
 
+.btn-delete:hover {
+    background-color: #7EA8BE; /* Calming blue on hover */
+}
