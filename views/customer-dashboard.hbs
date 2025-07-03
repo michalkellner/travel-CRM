@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        {{> main}}
+        <title>Customer Dashboard</title>
+    </head>
+    <body>
+        <div class="container">
+            <h2 class="page-title">Customer Dashboard</h2>
+
+            <!-- Customer Details -->
+            <div class="customer-details">
+                <h3>Customer Details</h3>
+                <p><strong>Name:</strong> {{customer.customer_name}}</p>
+                <p><strong>Email:</strong> {{customer.email}}</p>
+                <p><strong>Phone:</strong> {{customer.phone_number}}</p>
+            </div>
+
+            <!-- Bookings -->
+            <div class="customer-bookings">
+                <h3>Bookings</h3>
+                <table class="bookings-table">
+                    <thead>
+                        <tr>
+                            <th>Retreat Name</th>
+                            <th>Retreat Date</th>
+                            <th>Number of Guests</th>
+                            <th>Total Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each bookings}}
+                        <tr>
+                            <td>{{this.retreat_name}}</td>
+                            <td>{{formatDate this.retreat_date}}</td>
+                            <td>{{this.num_guests}}</td>
+                            <td>${{this.total_price}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Booked Rooms -->
+            <div class="booked-rooms">
+                <h3>Booked Rooms</h3>
+                <table class="rooms-table">
+                    <thead>
+                        <tr>
+                            <th>Room Name</th>
+                            <th>Price</th>
+                            <th>Capacity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each rooms}}
+                        <tr>
+                            <td>{{this.room_name}}</td>
+                            <td>${{this.price}}</td>
+                            <td>{{this.capacity}} guests</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Booked Meals -->
+            <div class="booked-meals">
+                <h3>Booked Meals</h3>
+                <table class="meals-table">
+                    <thead>
+                        <tr>
+                            <th>Meal Name</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each meals}}
+                        <tr>
+                            <td>{{this.meal_name}}</td>
+                            <td>{{this.meal_count}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {{> footer}}
+    </body>
+</html>

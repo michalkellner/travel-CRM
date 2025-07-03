@@ -18,9 +18,11 @@
             const roomsContainer = document.getElementById('rooms-container');
             const addRoomButton = document.getElementById('add-room-button');
             const totalPriceField = document.getElementById('total-price');
+			const form = document.getElementById('new-customer-form');
 
             let totalPrice = 0;
             let roomOptions = []; // Global variable to store room options
+			let selectedRoomCounts = {}; // Track selected room counts
 
             // Fetch room options for the selected retreat
             async function fetchRoomOptions(retreatId) {
@@ -102,7 +104,7 @@
                 select.appendChild(defaultOption);
 
                 // Populate the dropdown with room options
-                roomOptions.forEach(room => {
+                roomOptions.filter(room => room.inventory > 0).forEach(room => {
                     const option = document.createElement('option');
                     option.value = room.room_type_id; // Use room_id as the value
                     option.textContent = `${room.room_name} - $${room.price} - Capacity: ${room.capacity} guests`;
@@ -110,11 +112,23 @@
                     select.appendChild(option);
                 });
 
-                // Add event listener to update total price when a room is selected
+                // Add event listener to update total price when a room is selected. check inventory.
                 select.addEventListener('change', () => {
                     const previousPrice = parseFloat(select.dataset.previousPrice || 0);
                     const selectedRoom = roomOptions.find(room => room.room_type_id == select.value);
                     const roomPrice = parseFloat(selectedRoom.price);
+					const selectedRoomId = select.value;
+
+					// Check if the selected room exceeds the available inventory
+					const currentCount = selectedRoomCounts[selectedRoomId] || 0;
+
+					if (currentCount >= selectedRoom.inventory) {
+						alert(`You cannot add more rooms of this type. Only ${selectedRoom.inventory} available.`);
+						select.value = ''; // Reset selection
+						return;
+					}
+
+					selectedRoomCounts[selectedRoomId] = currentCount + 1;
 
                     // Update total price
                     totalPrice -= previousPrice; // Subtract previous room price
@@ -131,12 +145,19 @@
                 removeButton.textContent = 'Remove';
                 removeButton.addEventListener('click', () => {
                     const roomPrice = parseFloat(select.dataset.previousPrice || 0);
+					const selectedRoomId = select.value;
+
+					//update the selected room count
+					if (selectedRoomId) {
+						selectedRoomCounts[selectedRoomId] = (selectedRoomCounts[selectedRoomId] || 1) - 1;
+					}
 
                     // Update total price
                     totalPrice -= roomPrice;
                     totalPriceField.value = totalPrice.toFixed(2);
 
                     roomDiv.remove();
+
                 });
 
                 // Append elements to the room container
@@ -190,6 +211,27 @@
 
             // Initialize total price
             totalPriceField.value = totalPrice.toFixed(2);
+
+			// Check that the form is valid before submission
+			form.addEventListener('submit', (event) => {
+				const numGuests = parseInt(numGuestsInput.value, 10);
+				let totalCapacity = 0;
+
+				// Calculate total capcity of selected rooms
+				const roomSelects = roomsContainer.querySelectorAll('select[name="rooms[]"]');
+				roomSelects.forEach(select => {
+					const selectedRoom = roomOptions.find(room => room.room_type_id == select.value);
+					if (selectedRoom) {
+						totalCapacity += parseInt(selectedRoom.capacity, 10);
+					}
+				});
+
+				// Check if total capacity is sufficient for the number of guests
+				if (totalCapacity < numGuests) {
+					event.preventDefault(); // Prevent form submission
+					alert(`Total room capacity (${totalCapacity}) is less than the number of guests (${numGuests}). Please adjust your room selections.`);
+				}
+			});
         });
     </script>
 </head>
@@ -219,9 +261,12 @@
                 <label for="retreat_id">Select Retreat</label>
                 <select name="retreat_id" id="retreat_id" required>
                     {{#each retreats}}
-                        <option value="{{this.retreat_id}}">
-                            {{this.retreat_name}} - {{formatDate this.start_date}}
-                        </option>
+						{{#if (isFutureDate this.start_date)}}
+
+							<option value="{{this.retreat_id}}">
+								{{this.retreat_name}} - {{formatDate this.start_date}}
+							</option>
+						{{/if}}
                     {{/each}}
                 </select>
             </div>
@@ -257,6 +302,10 @@
                 <input type="text" id="total-price" name="total_price" readonly value="0">
             </div>
 
+			<div class="form-group">
+				<label for="special_requests">Please write any questions or special requests you may have here:</label>
+				<textarea id="special_requests" name="special_requests" rows="4" style="width: 100%;" placeholder="Any special requests or notes"></textarea>
+			</div>
             <button type="submit" class="btn btn-primary">Submit</button>
         </form>
     </div>

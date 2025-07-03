@@ -111,9 +111,9 @@ app.post('/new-retreat', async (req, res) => {
 
 // Create a new customer & reservation:
 app.post('/new-reservation', async (req, res) => {
-	const {name, email, phone, retreat_id, start_date, num_guests, meal_choices, rooms, total_price} = req.body;
+	const {name, email, phone, retreat_id, start_date, num_guests, meal_choices, rooms, total_price, special_requests} = req.body;
 	const cust_query = "INSERT INTO customers (customer_name, email, phone_number) VALUES (?, ?, ?)";
-	const res_query = "INSERT INTO bookings_general (customer_id, retreat_id, num_guests, total_price, status, retreat_date) VALUES (?, ?, ?, ?, ?, ?)";
+	const res_query = "INSERT INTO bookings_general (customer_id, retreat_id, num_guests, total_price, status, retreat_date, special_requests) VALUES (?, ?, ?, ?, ?, ?, ?)";
 	const room_query = "INSERT INTO bookings_rooms (booking_id, room_type_id, customer_id) VALUES (?, ?, ?)";
 	const meal_query = "INSERT INTO bookings_meals (booking_id, customer_id, meal_choice_id) VALUES (?, ?, ?)";
 
@@ -125,7 +125,7 @@ app.post('/new-reservation', async (req, res) => {
 		const customerID = customer.insertId;
 
 		// Insert the new reservation into the bookings_general table
-		const [booking] = await db.query(res_query, [customerID, retreat_id, num_guests, total_price, 'awaiting call', start_date]);
+		const [booking] = await db.query(res_query, [customerID, retreat_id, num_guests, total_price, 'awaiting call', start_date, special_requests]);
 
 		// Get the ID of the newly created booking
 		const bookingID = booking.insertId;
@@ -239,6 +239,11 @@ Handlebars.registerHelper('formatDate', function (dateString) {
 	});
   });
   
+Handlebars.registerHelper('isFutureDate', function(dateString) {
+    const today = new Date();
+    const date = new Date(dateString);
+    return date > today; // Returns true if the date is in the future
+});
 
 var hbs = exphbs.create({
 	extname: ".hbs",
@@ -327,6 +332,60 @@ app.get('/retreat-dashboard/:retreat_id', async (req, res) => {
     }
 });
 
+// Customer Dashboard Route
+app.get('/customer-dashboard/:customer_id', async (req, res) => {
+    const { customer_id } = req.params;
+
+    try {
+        // Fetch customer details
+        const [customerDetails] = await db.query('SELECT * FROM customers WHERE customer_id = ?', [customer_id]);
+
+        // Fetch bookings for the customer
+        const [bookings] = await db.query(`
+            SELECT 
+                r.retreat_name,
+                bg.retreat_date,
+                bg.num_guests,
+                bg.total_price
+            FROM bookings_general bg
+            INNER JOIN retreats r ON bg.retreat_id = r.retreat_id
+            WHERE bg.customer_id = ?
+        `, [customer_id]);
+
+        // Fetch room bookings for the customer
+        const [rooms] = await db.query(`
+            SELECT 
+                ro.room_name,
+                ro.price,
+                ro.capacity
+            FROM bookings_rooms br
+            INNER JOIN room_options ro ON br.room_type_id = ro.room_type_id
+            WHERE br.customer_id = ?
+        `, [customer_id]);
+
+        // Fetch booked meals for the customer
+        const [meals] = await db.query(`
+            SELECT 
+                mc.meal_name,
+                COUNT(bm.meal_choice_id) AS meal_count
+            FROM bookings_meals bm
+            INNER JOIN meal_choices mc ON bm.meal_choice_id = mc.meal_id
+            WHERE bm.customer_id = ?
+            GROUP BY mc.meal_id, mc.meal_name
+        `, [customer_id]);
+
+        // Pass the meals data to the view
+        res.render('customer-dashboard', {
+            customer: customerDetails[0],
+            bookings: bookings,
+            rooms: rooms,
+            meals: meals
+        });
+    } catch (err) {
+        console.error('Error fetching customer details:', err);
+        res.status(500).json({ message: 'Error fetching customer details' });
+    }
+});
 
 var port = process.env.PORT || 8080;
 app.listen(port);

@@ -167,6 +167,43 @@ table td {
     color: #28536B; /* Deep teal for text */
 }
 
+/* Customer Dashboard */
+.customer-details, .customer-bookings, .booked-rooms {
+    margin-bottom: 30px;
+}
+
+.bookings-table, .rooms-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #F6F0ED; /* Soft beige for table background */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.bookings-table th, .rooms-table th, 
+.bookings-table td, .rooms-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #7EA8BE; /* Calming blue for borders */
+}
+
+.bookings-table th, .rooms-table th {
+    background-color: #7EA8BE; /* Calming blue for headers */
+    color: #F6F0ED; /* Soft beige for text */
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.bookings-table tr:hover, .rooms-table tr:hover {
+    background-color: #C2948A; /* Warm pinkish tone on hover */
+}
+
+.bookings-table td, .rooms-table td {
+    color: #28536B; /* Deep teal for text */
+}
+
 /* Form Inputs and Selects */
 input[type="text"], input[type="email"], input[type="number"], input[type="date"], select {
     width: 60%; /* Reduce the width to 60% */
