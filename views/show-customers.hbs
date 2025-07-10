@@ -30,29 +30,36 @@
         </table>
     </div>
     <script>
-        function populateTable(){
+        function populateTable() {
             const tableBody = document.querySelector('#itemTable tbody');
-        
-        // fetch customer data from customers table of database
-        fetch('http://localhost:8080/customers')
-            .then(response => response.json())
-            .then(data => {
-                data.forEach(item => {
-                    const row = document.createElement('tr');
 
-                    row.innerHTML = `
-                        <td>${item.customer_id}</td>
-                        <td>${item.customer_name}</td>
-                        <td>${item.email}</td>
-                        <td>${item.phone_number}</td>
-                    `;
+            // Fetch customer data from the customers table of the database
+            fetch('http://localhost:8080/customers')
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.classList.add('clickable-row'); // Add a class for styling
 
-                    tableBody.appendChild(row);
+                        // Add a click event listener to redirect to the customer dashboard
+                        row.addEventListener('click', () => {
+                            window.location.href = `/customer-dashboard/${item.customer_id}`;
+                        });
+
+                        // Populate the row with customer data
+                        row.innerHTML = `
+                            <td>${item.customer_id}</td>
+                            <td>${item.customer_name}</td>
+                            <td>${item.email}</td>
+                            <td>${item.phone_number}</td>
+                        `;
+
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
                 });
-            })
-            .catch(error =>{
-                console.error('Error fetching data:', error);
-            });
         }
         window.onload = populateTable;
     </script>

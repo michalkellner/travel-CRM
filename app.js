@@ -116,7 +116,7 @@ app.post('/new-reservation', async (req, res) => {
 	const res_query = "INSERT INTO bookings_general (customer_id, retreat_id, num_guests, total_price, status, retreat_date, special_requests) VALUES (?, ?, ?, ?, ?, ?, ?)";
 	const room_query = "INSERT INTO bookings_rooms (booking_id, room_type_id, customer_id) VALUES (?, ?, ?)";
 	const meal_query = "INSERT INTO bookings_meals (booking_id, customer_id, meal_choice_id) VALUES (?, ?, ?)";
-
+	const update_inventory_query = "UPDATE room_options SET inventory = inventory - 1 WHERE room_type_id = ?";
 	try {
 		// Insert the new customer into the customers table
 		const [customer] = await db.query(cust_query, [name, email, phone]);
@@ -134,6 +134,8 @@ app.post('/new-reservation', async (req, res) => {
 		if (Array.isArray(rooms) && rooms.length > 0) {
 			for (const room of rooms) { // assuming rooms is an array of room type IDs
 				await db.query(room_query, [bookingID, room, customerID]);
+				// update the inventory of the room type
+				await db.query(update_inventory_query, [room]);
 			}
 		}
 
@@ -143,9 +145,17 @@ app.post('/new-reservation', async (req, res) => {
 				await db.query(meal_query, [bookingID, customerID, meal]);
 			}
 		}
-		// TODO: Calculate total price based on room type and meal choices
-		//TODO: add all rooms to booking_rooms table
-		// TODO: add all meal choices to booking_meals table
+		
+		// Send confirmation email
+		const mailOptions = {
+			from: process.env.EMAIL, // Your email address
+			to: email, // Customer's email address
+			subject: 'Booking Confirmation',
+			text: `Dear ${name}, \n\nThanks for signing up!`
+		};
+
+		await transporter.sendMail(mailOptions);
+		console.log('Confirmation email sent to:', email);
 
 		res.status(201).redirect('/show-customers');
 	} catch (err) {
@@ -245,6 +255,22 @@ Handlebars.registerHelper('isFutureDate', function(dateString) {
     return date > today; // Returns true if the date is in the future
 });
 
+Handlebars.registerHelper('eq', function (a, b) {
+    return a === b;
+});
+
+Handlebars.registerHelper('formatDateForInput', function (dateString) {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+});
+
+Handlebars.registerHelper('includes', function (array, value) {
+    return Array.isArray(array) && array.includes(value);
+});
+
 var hbs = exphbs.create({
 	extname: ".hbs",
 	defaultLayout: false,
@@ -340,51 +366,241 @@ app.get('/customer-dashboard/:customer_id', async (req, res) => {
         // Fetch customer details
         const [customerDetails] = await db.query('SELECT * FROM customers WHERE customer_id = ?', [customer_id]);
 
-        // Fetch bookings for the customer
-        const [bookings] = await db.query(`
-            SELECT 
-                r.retreat_name,
-                bg.retreat_date,
-                bg.num_guests,
-                bg.total_price
-            FROM bookings_general bg
-            INNER JOIN retreats r ON bg.retreat_id = r.retreat_id
-            WHERE bg.customer_id = ?
-        `, [customer_id]);
+        // Fetch all customer_ids where the email matches the given customer_id's email
+        const [matchingCustomers] = await db.query('SELECT customer_id FROM customers WHERE email = ?', [customerDetails[0].email]);
 
-        // Fetch room bookings for the customer
-        const [rooms] = await db.query(`
-            SELECT 
-                ro.room_name,
-                ro.price,
-                ro.capacity
-            FROM bookings_rooms br
-            INNER JOIN room_options ro ON br.room_type_id = ro.room_type_id
-            WHERE br.customer_id = ?
-        `, [customer_id]);
+        // Extract customer IDs
+        const customerIds = matchingCustomers.map(c => c.customer_id);
 
-        // Fetch booked meals for the customer
-        const [meals] = await db.query(`
-            SELECT 
-                mc.meal_name,
-                COUNT(bm.meal_choice_id) AS meal_count
-            FROM bookings_meals bm
-            INNER JOIN meal_choices mc ON bm.meal_choice_id = mc.meal_id
-            WHERE bm.customer_id = ?
-            GROUP BY mc.meal_id, mc.meal_name
-        `, [customer_id]);
+        // Fetch bookings, rooms, and meals for all customer IDs
+        const bookingDetails = await Promise.all(
+            customerIds.map(async (id) => {
+                // Fetch bookings for the current customer ID
+                const [bookings] = await db.query(`
+                    SELECT 
+                        bg.booking_id,
+                        r.retreat_name,
+                        bg.retreat_date,
+                        bg.num_guests,
+                        bg.total_price,
+						bg.status
+                    FROM bookings_general bg
+                    INNER JOIN retreats r ON bg.retreat_id = r.retreat_id
+                    WHERE bg.customer_id = ?
+                `, [id]);
+				
+                // Fetch rooms and meals for each booking
+                const detailedBookings = await Promise.all(
+                    bookings.map(async (booking) => {
+                        const [rooms] = await db.query(`
+                            SELECT 
+                                ro.room_name,
+                                ro.price,
+                                ro.capacity
+                            FROM bookings_rooms br
+                            INNER JOIN room_options ro ON br.room_type_id = ro.room_type_id
+                            WHERE br.booking_id = ?
+                        `, [booking.booking_id]);
 
-        // Pass the meals data to the view
+                        const [meals] = await db.query(`
+                            SELECT 
+                                mc.meal_name,
+                                COUNT(bm.meal_choice_id) AS meal_count
+                            FROM bookings_meals bm
+                            INNER JOIN meal_choices mc ON bm.meal_choice_id = mc.meal_id
+                            WHERE bm.booking_id = ?
+                            GROUP BY mc.meal_id, mc.meal_name
+                        `, [booking.booking_id]);
+						
+						const [specialRequestsResult] = await db.query(`
+							SELECT special_requests
+							FROM bookings_general
+							WHERE booking_id = ?
+						`, [booking.booking_id]);
+
+						const special_requests = specialRequestsResult.length > 0 ? specialRequestsResult[0].special_requests : null;
+
+                        return {
+                            ...booking,
+                            rooms,
+                            meals,
+							special_requests
+                        };
+                    })
+                );
+
+                return detailedBookings;
+            })
+        );
+
+        // Flatten the array of arrays into a single array of bookings
+        const allBookings = bookingDetails.flat();
+
+		//Sort bookings by retreat_date in descending order
+		allBookings.sort((a,b) => new Date(b.retreat_date) - new Date(a.retreat_date));
+
+        // Render the customer dashboard with the fetched data
         res.render('customer-dashboard', {
             customer: customerDetails[0],
-            bookings: bookings,
-            rooms: rooms,
-            meals: meals
+            bookings: allBookings
         });
     } catch (err) {
         console.error('Error fetching customer details:', err);
         res.status(500).json({ message: 'Error fetching customer details' });
     }
+});
+
+// Edit Booking Route
+app.get('/edit-booking/:booking_id', async (req, res) => {
+    const { booking_id } = req.params;
+
+    try {
+        // Fetch booking details
+        const [bookingDetails] = await db.query(`
+            SELECT
+                bg.booking_id,
+                c.customer_name,
+                c.email,
+                c.phone_number,
+                r.retreat_name,
+				r.retreat_id,
+                bg.retreat_date,
+                bg.num_guests,
+                bg.total_price,
+                bg.special_requests,
+                bg.status
+            FROM bookings_general bg
+            INNER JOIN customers c ON bg.customer_id = c.customer_id
+            INNER JOIN retreats r ON bg.retreat_id = r.retreat_id
+            WHERE bg.booking_id = ?
+        `, [booking_id]);
+
+        if (bookingDetails.length === 0) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        // Fetch room options for the retreat
+        const [roomOptions] = await db.query('SELECT * FROM room_options WHERE retreat_id = ?', [bookingDetails[0].retreat_id]);
+        console.log('Room Options:', roomOptions);
+
+        // Fetch meal options for the retreat
+        const [mealOptions] = await db.query(`
+            SELECT 
+                mc.meal_name, 
+                mc.meal_id
+            FROM meal_choices mc
+            WHERE mc.retreat_id = ?
+        `, [bookingDetails[0].retreat_id]);
+        console.log('Meal Options:', mealOptions);
+
+        // Fetch selected rooms for the booking
+        const [selectedRooms] = await db.query(`
+            SELECT 
+                ro.room_type_id
+            FROM bookings_rooms br
+            INNER JOIN room_options ro ON br.room_type_id = ro.room_type_id
+            WHERE br.booking_id = ?
+        `, [booking_id]);
+        console.log('Selected Rooms:', selectedRooms);
+
+        // Fetch selected meals for the booking
+        const [selectedMeals] = await db.query(`
+            SELECT
+                mc.meal_id
+            FROM bookings_meals bm
+            INNER JOIN meal_choices mc ON bm.meal_choice_id = mc.meal_id
+            WHERE bm.booking_id = ?
+        `, [booking_id]);
+        console.log('Selected Meals:', selectedMeals);
+
+        // Render the edit booking form with the fetched data
+        res.render('edit-booking', {
+            booking: bookingDetails[0],
+            roomOptions: roomOptions,
+            mealOptions: mealOptions,
+            selectedRooms: selectedRooms.map(r => r.room_type_id),
+            selectedMeals: selectedMeals.map(m => m.meal_id)
+        });
+    } catch (err) {
+        console.error('Error fetching booking details:', err);
+        res.status(500).json({ message: 'Error fetching booking details' });
+    }
+});
+
+// Update Booking Route
+app.post('/update-booking/:booking_id', async (req, res) => {
+    const { booking_id } = req.params;
+    const { retreat_date, num_guests, status, rooms, meal_choices, special_requests } = req.body;
+
+    try {
+        // Update the booking details
+        await db.query(`
+            UPDATE bookings_general
+            SET retreat_date = ?, num_guests = ?, status = ?, special_requests = ?
+            WHERE booking_id = ?
+        `, [retreat_date, num_guests, status, special_requests, booking_id]);
+
+        // Update the rooms for the booking
+        await db.query('DELETE FROM bookings_rooms WHERE booking_id = ?', [booking_id]);
+        if (Array.isArray(rooms) && rooms.length > 0) {
+            for (const room of rooms) {
+                await db.query('INSERT INTO bookings_rooms (booking_id, room_type_id) VALUES (?, ?)', [booking_id, room]);
+            }
+        }
+
+        // Update the meal choices for the booking
+        await db.query('DELETE FROM bookings_meals WHERE booking_id = ?', [booking_id]);
+        if (Array.isArray(meal_choices) && meal_choices.length > 0) {
+            for (const meal of meal_choices) {
+                await db.query('INSERT INTO bookings_meals (booking_id, meal_choice_id) VALUES (?, ?)', [booking_id, meal]);
+            }
+        }
+
+        res.redirect(`/customer-dashboard/${req.body.customer_id}`);
+    } catch (err) {
+        console.error('Error updating booking:', err);
+        res.status(500).json({ message: 'Error updating booking' });
+    }
+});
+
+const nodemailer = require('nodemailer');
+
+//Create a transporter object
+const transporter = nodemailer.createTransport({
+	host: 'smtp.gmail.com',
+	port: 587, //TODO check if this is the right port
+	secure: false,
+	auth: {
+		user: process.env.EMAIL, // Your email address
+		pass: process.env.PASSWORD // Your email password or app password
+	}
+});
+
+// Verify the transporter
+transporter.verify((error, success) => {
+	if (error) {
+		console.error('Error verifying transporter:', error);
+	} else {
+		console.log('Nodemailer transporter is ready');
+	}
+});
+
+app.post('/update-template/:template_id', async (req, res) => {
+	const { template_id } = req.params;
+	const { template_name, body } = req.body;
+
+	try {
+		await db.query(`
+			UPDATE email_templates
+			SET template_name = ?, body = ?
+			WHERE template_id = ?
+		`, [template_name, body, template_id]);
+
+		res.redirect('/manage-templates');
+	} catch (err) {
+		console.error('Error updating email template:', err);
+		res.status(500).json({ message: 'Error updating email template' });
+	}
 });
 
 var port = process.env.PORT || 8080;

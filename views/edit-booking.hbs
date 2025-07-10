@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        {{> main}}
+        <title>Edit Booking</title>
+    </head>
+    <body>
+        <div class="container">
+            <h2 class="page-title">Edit Booking</h2>
+
+            <form class="edit-booking-form" id="edit-booking-form" action="/update-booking/{{booking.booking_id}}" method="POST">
+                <!-- Customer Info -->
+                <div class="form-group">
+                    <label for="customer_name">Customer Name</label>
+                    <input type="text" id="customer_name" name="customer_name" value="{{booking.customer_name}}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" value="{{booking.email}}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone_number">Phone Number</label>
+                    <input type="text" id="phone_number" name="phone_number" value="{{booking.phone_number}}" required>
+                </div>
+
+                <!-- Retreat Info (Read-Only) -->
+                <div class="form-group">
+                    <label for="retreat_name">Retreat Name</label>
+                    <input type="text" id="retreat_name" name="retreat_name" value="{{booking.retreat_name}}" readonly>
+                </div>
+
+                <!-- Booking Info -->
+                <div class="form-group">
+                    <label for="retreat_date">Retreat Date</label>
+                    <input type="date" id="retreat_date" name="retreat_date" value="{{formatDateForInput booking.retreat_date}}" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="num_guests">Number of Guests</label>
+                    <input type="number" id="num_guests" name="num_guests" value="{{booking.num_guests}}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="status">Booking Status</label>
+                    <select id="status" name="status" required>
+                        <option value="awaiting call" {{#if (eq booking.status "awaiting call")}}selected{{/if}}>Awaiting Call</option>
+                        <option value="confirmed" {{#if (eq booking.status "confirmed")}}selected{{/if}}>Confirmed</option>
+                        <option value="cancelled" {{#if (eq booking.status "cancelled")}}selected{{/if}}>Cancelled</option>
+                    </select>
+                </div>
+
+                <!-- Room Selection -->
+                <div class="form-group">
+                    <label>Rooms</label>
+                    {{#each roomOptions}}
+                    <div>
+                        <input type="checkbox" id="room_{{this.room_type_id}}" name="rooms[]" value="{{this.room_type_id}}" 
+                        {{#if (includes ../selectedRooms this.room_type_id)}}checked{{/if}}>
+                        <label for="room_{{this.room_type_id}}">{{this.room_name}} - ${{this.price}} - Capacity: {{this.capacity}}</label>
+                    </div>
+                    {{/each}}
+                </div>
+
+                <!-- Meal Selection -->
+                <div class ="form-group">
+                    <label for="meal_choices">Meals</label>
+                    <select id="meal_choices" name="meal_choices[]" multiple>
+                        {{#each mealOptions}}
+                        <option value="{{this.meal_id}}" 
+                        {{#if (includes ../selectedMeals this.meal_id)}}selected{{/if}}>
+                            {{this.meal_name}} - ${{this.price}}
+                        </option>
+                        {{/each}}
+                    </select>"
+                </div>
+{{!--                 
+                <div class="form-group">
+                    <label>Meals</label>
+                    {{#each mealOptions}}
+                    <div>
+                        <input type="checkbox" id="meal_{{this.meal_id}}" name="meal_choices[]" value="{{this.meal_id}}" 
+                        {{#if (includes ../selectedMeals this.meal_id)}}checked{{/if}}>
+                        <label for="meal_{{this.meal_id}}">{{this.meal_name}}</label>
+                    </div>
+                    {{/each}}
+                </div> --}}
+
+                <!-- Special Requests -->
+                <div class="form-group">
+                    <label for="special_requests">Special Requests</label>
+                    <textarea id="special_requests" name="special_requests" rows="4">{{booking.special_requests}}</textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-group">
+                    <input type="submit" value="Update Booking" class="btn btn-primary">
+                </div>
+            </form>
+        </div>
+        {{> footer}}
+    </body>
+</html>
